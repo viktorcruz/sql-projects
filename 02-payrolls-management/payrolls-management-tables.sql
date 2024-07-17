@@ -1,0 +1,177 @@
+--; gestion de nomina
+--CREATE DATABASE Grune_Payrolls
+USE [Grune_Payrolls]
+GO
+
+IF EXISTS(SELECT 1 FROM SYS.OBJECTS WHERE OBJECT_ID = OBJECT_ID(N'[dbo].[PayrollBonuses]'))
+BEGIN
+	ALTER TABLE [dbo].[PayrollBonuses] DROP CONSTRAINT IF EXISTS [FK_PayrollBonuses_Bonuses]
+END
+IF EXISTS(SELECT 1 FROM SYS.OBJECTS WHERE OBJECT_ID = OBJECT_ID(N'[dbo].[PayrollDeductions]'))
+BEGIN
+	ALTER TABLE	[dbo].[PayrollDeductions] DROP CONSTRAINT IF EXISTS [FK_PayrollDeductions_Payrolls]
+END
+IF EXISTS(SELECT 1 FROM SYS.OBJECTS WHERE OBJECT_ID = OBJECT_ID(N'[dbo].[PayrollDeductions]'))
+BEGIN 
+	ALTER TABLE [dbo].[PayrollDeductions] DROP CONSTRAINT IF EXISTS [FK_PayrollDeductions_Deductions]
+END
+IF EXISTS(SELECT 1 FROM SYS.OBJECTS WHERE OBJECT_ID = OBJECT_ID(N'[dbo].[FK_Payrolls_Employees]'))
+BEGIN 
+	ALTER TABLE [dbo].[Payrolls] DROP CONSTRAINT IF EXISTS [FK_Payrolls_Employees]
+END
+IF EXISTS(SELECT 1 FROM SYS.OBJECTS WHERE OBJECT_ID = OBJECT_ID(N'[dbo].[Employees]'))
+BEGIN
+	ALTER TABLE [dbo].[Employees] DROP CONSTRAINT IF EXISTS FK_Employees_Positions
+END
+IF EXISTS(SELECT 1 FROM SYS.OBJECTS WHERE OBJECT_ID = OBJECT_ID(N'[dbo].[Employees]'))
+BEGIN
+	ALTER TABLE [dbo].[Employees] DROP CONSTRAINT IF EXISTS [FK_Employees_Departments]
+END
+IF EXISTS(SELECT 1 FROM SYS.OBJECTS WHERE OBJECT_ID = OBJECT_ID(N'[dbo].[PayrollBonuses]'))
+BEGIN
+	ALTER TABLE [dbo].[PayrollBonuses] DROP CONSTRAINT IF EXISTS [FK_PayrollBonuses_Payrolls]
+END
+IF EXISTS(SELECT 1 FROM SYS.OBJECTS WHERE OBJECT_ID = OBJECT_ID(N'[dbo].[PayrollBonuses]'))
+BEGIN 
+	ALTER TABLE [dbo].[PayrollBonuses] DROP CONSTRAINT IF EXISTS [FK_PayrollBonuses_Bonuses]
+END
+
+
+IF EXISTS(SELECT 1 FROM SYS.OBJECTS WHERE OBJECT_ID = OBJECT_ID(N'[dbo].[PayrollBonuses]'))
+BEGIN 
+	DROP TABLE [dbo].[PayrollBonuses]
+END
+IF EXISTS(SELECT 1 FROM SYS.OBJECTS WHERE OBJECT_ID = OBJECT_ID(N'[dbo].[Bonuses]'))
+BEGIN
+	DROP TABLE [dbo].[Bonuses]
+END
+IF EXISTS(SELECT 1 FROM SYS.OBJECTS WHERE OBJECT_ID = OBJECT_ID(N'[dbo].[PayrollDeductions]'))
+BEGIN
+	DROP TABLE [dbo].[PayrollDeductions]
+END
+IF EXISTS(SELECT 1 FROM SYS.OBJECTS WHERE OBJECT_ID = OBJECT_ID(N'[dbo].[Deductions]'))
+BEGIN 
+	DROP TABLE [dbo].[Deductions]
+END
+IF EXISTS(SELECT 1 FROM SYS.OBJECTS WHERE OBJECT_ID = OBJECT_ID(N'[dbo].[Payrolls]'))
+BEGIN
+	DROP TABLE [dbo].[Payrolls]
+END
+IF EXISTS(SELECT 1 FROM SYS.OBJECTS WHERE OBJECT_ID = OBJECT_ID(N'[dbo].[Employees]'))
+BEGIN
+	DROP TABLE [dbo].[Employees]
+END
+IF EXISTS(SELECT 1 FROM SYS.OBJECTS WHERE OBJECT_ID = OBJECT_ID(N'[dbo].[Positions]'))
+BEGIN
+	DROP TABLE [dbo].[Positions]
+END
+IF EXISTS(SELECT 1 FROM SYS.OBJECTS WHERE OBJECT_ID = OBJECT_ID(N'[dbo].[Departments]'))
+BEGIN
+	DROP TABLE [dbo].[Departments]
+END
+
+
+
+
+
+IF OBJECT_ID(N'Departments') IS NULL
+BEGIN
+	CREATE TABLE Departments
+	(
+		DepartmentId INT IDENTITY(1,1) NOT NULL PRIMARY KEY CLUSTERED,
+		Name NVARCHAR(50) NOT NULL
+	);
+END
+
+IF OBJECT_ID(N'Positions') IS NULL
+BEGIN
+	CREATE TABLE Positions
+	(
+		PositionId INT IDENTITY(1,1) NOT NULL PRIMARY KEY CLUSTERED,
+		Name NVARCHAR(20) NOT NULL
+	);
+END
+
+IF OBJECT_ID(N'Employees') IS NULL
+BEGIN 
+	CREATE TABLE Employees
+	(
+		EmployeeId INT IDENTITY(1,1) NOT NULL PRIMARY KEY CLUSTERED,
+		FirstName NVARCHAR(20) NOT NULL,
+		LastName NVARCHAR(20) NOT NULL,
+		Email NVARCHAR(20) NOT NULL,
+		Phone NVARCHAR(20),
+		PositionId INT NOT NULL,
+		DepartmentId INT NOT NULL
+	);
+		ALTER TABLE [Employees]
+			WITH CHECK ADD CONSTRAINT [FK_Employees_Positions]
+			FOREIGN KEY([PositionId]) REFERENCES Positions([PositionId])
+		ALTER TABLE [Employees]
+			WITH CHECK ADD CONSTRAINT [FK_Employees_Departments]
+			FOREIGN KEY([DepartmentId]) REFERENCES Departments([DepartmentId])
+END
+
+IF OBJECT_ID(N'Payrolls') IS NULL
+BEGIN
+	CREATE TABLE Payrolls
+	(
+		PayrollId INT IDENTITY(1,1) NOT NULL PRIMARY KEY CLUSTERED,
+		EmployeeId INT NOT NULL,
+		PayrollNumber NVARCHAR(50) NOT NULL UNIQUE,
+		PaymentDate DATETIME NOT NULL,
+		GrossSalary MONEY NOT NULL,
+		TotalDeductions MONEY NOT NULL,
+		NetSalary MONEY NOT NULL
+	);
+
+	ALTER TABLE Payrolls
+	ADD CONSTRAINT FK_Payrolls_Employees
+	FOREIGN KEY (EmployeeId) REFERENCES Employees (EmployeeId);
+END
+
+IF OBJECT_ID(N'Deductions') IS NULL
+BEGIN
+	CREATE TABLE Deductions
+	(
+		DeductionId INT IDENTITY(1,1) NOT NULL PRIMARY KEY CLUSTERED,
+		Name NVARCHAR(50) NOT NULL,
+		Percentage DECIMAL(10,2) NOT NULL
+	);
+END
+
+IF OBJECT_ID(N'PayrollDeductions') IS NULL
+BEGIN
+	CREATE TABLE PayrollDeductions
+	(
+		PayrollId INT NOT NULL,
+		DeductionId INT NOT NULL,
+		Amount MONEY NOT NULL,
+		PRIMARY KEY (PayrollId, DeductionId),
+		CONSTRAINT FK_PayrollDeductions_Payrolls FOREIGN KEY (PayrollId) REFERENCES Payrolls (PayrollId),
+		CONSTRAINT FK_PayrollDeductions_Deductions FOREIGN KEY (DeductionId) REFERENCES Deductions (DeductionId)
+	);
+END
+
+IF OBJECT_ID(N'Bonuses') IS NULL
+BEGIN
+	CREATE TABLE Bonuses
+	(
+		BonusId INT IDENTITY(1,1) NOT NULL PRIMARY KEY CLUSTERED,
+		Name NVARCHAR(20) NOT NULL,
+		FixedAmount MONEY NOT NULL
+	);
+END
+
+IF OBJECT_ID(N'PayrollBonuses') IS NULL
+BEGIN
+	CREATE TABLE PayrollBonuses
+	(
+		PayrollId INT NOT NULL,
+		BonusId INT NOT NULL,
+		Amount MONEY NOT NULL,
+		PRIMARY KEY (PayrollId, BonusId),
+		CONSTRAINT [FK_PayrollBonuses_Payrolls] FOREIGN KEY([PayrollId]) REFERENCES Payrolls([PayrollId]),
+		CONSTRAINT [FK_PayrollBonuses_Bonuses] FOREIGN KEY([BonusId]) REFERENCES Bonuses([BonusId])
+	);
+END
